@@ -7,5 +7,8 @@ RUN rm -rf /usr/local/tomcat/webapps/ROOT
 # Copy your WAR file as ROOT.war (deployed at /)
 COPY ROOT.war /usr/local/tomcat/webapps/ROOT.war
 
-# Tell Docker what port your app will run on
+# Copy the modified server.xml to disable shutdown port
+COPY conf/server.xml /usr/local/tomcat/conf/server.xml
+
+# Expose port 8080 for your app
 EXPOSE 8080
