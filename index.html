@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Snake Game with Leaderboard</title>
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    #game {
+      background: black;
+      display: block;
+      margin: 20px auto;
+      border: 2px solid #0f0;
+    }
+    button {
+      margin: 0 5px;
+      padding: 8px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background-color: #0f0;
+      color: #000;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    button:disabled {
+      background-color: #444;
+      cursor: not-allowed;
+      color: #aaa;
+    }
+    button:hover:not(:disabled) {
+      background-color: #3f3;
+    }
+    #gameOverOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.85);
+      color: #0f0;
+      font-size: 28px;
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #gameOverOverlay button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      font-size: 20px;
+      background-color: #0a0;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 140px;
+    }
+    #gameOverOverlay button:hover {
+      background-color: #0f0;
+      color: #000;
+    }
+    #leaderboard {
+      margin-top: 40px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+    #leaderboard h2 {
+      color: #0f0;
+      margin-bottom: 10px;
+    }
+    #leaderboard table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #leaderboard th, #leaderboard td {
+      border: 1px solid #0f0;
+      padding: 8px;
+      font-size: 16px;
+    }
+    #leaderboard th {
+      background-color: #0f0;
+      color: #000;
+    }
+    #playerNameInput {
+      margin-bottom: 15px;
+      font-size: 18px;
+      padding: 6px 8px;
+      width: 200px;
+      border-radius: 4px;
+      border: 2px solid #0f0;
+      background: #111;
+      color: #0f0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Snake Game</h1>
+
+  <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="15" />
+
+  <div>
+    <button id="startBtn" disabled>Start</button>
+    <button id="pauseBtn" disabled>Pause</button>
+    <button id="restartBtn" disabled>Restart</button>
+  </div>
+
+  <canvas id="game" width="400" height="400"></canvas>
+
+  <div id="gameOverOverlay">
+    <div id="gameOverText"></div>
+    <button id="overlayRestartBtn">Restart</button>
+  </div>
+
+  <div id="leaderboard">
+    <h2>Leaderboard - Top 10 Scores</h2>
+    <table>
+      <thead>
+        <tr><th>Player</th><th>Score</th></tr>
+      </thead>
+      <tbody id="leaderboardBody">
+        <!-- Filled dynamically -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scale = 20;
+    const rows = canvas.height / scale;
+    const columns = canvas.width / scale;
+
+    let snake;
+    let direction;
+    let food;
+    let lastTime = 0;
+    let accumulator = 0;
+    let gameOver = false;
+    let running = false;
+
+    const baseSpeed = 150;
+    const minSpeed = 50;
+
+    let newSegmentAlpha = 0;
+    let animatingSegmentIndex = -1;
+
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const gameOverOverlay = document.getElementById("gameOverOverlay");
+    const gameOverText = document.getElementById("gameOverText");
+    const overlayRestartBtn = document.getElementById("overlayRestartBtn");
+    const playerNameInput = document.getElementById("playerNameInput");
+    const leaderboardBody = document.getElementById("leaderboardBody");
+
+    function initGame() {
+      snake = [{ x: 160, y: 160 }];
+      direction = "RIGHT";
+      food = randomFoodPosition();
+      gameOver = false;
+      accumulator = 0;
+      lastTime = 0;
+      running = false;
+      newSegmentAlpha = 0;
+      animatingSegmentIndex = -1;
+
+      pauseBtn.textContent = "Pause";
+      pauseBtn.disabled = true;
+      restartBtn.disabled = true;
+      startBtn.disabled = playerNameInput.value.trim() === "";
+
+      clearCanvas();
+      drawInitial();
+
+      gameOverOverlay.style.display = "none";
+    }
+
+    function randomFoodPosition() {
+      let pos;
+      do {
+        pos = {
+          x: Math.floor(Math.random() * columns) * scale,
+          y: Math.floor(Math.random() * rows) * scale
+        };
+      } while (snake.some(s => s.x === pos.x && s.y === pos.y));
+      return pos;
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawInitial() {
+      drawFood();
+      drawSnake();
+    }
+
+    function getSpeed() {
+      return Math.max(minSpeed, baseSpeed - (snake.length - 1) * 5);
+    }
+
+    function drawFood(time = 0) {
+      let pulse = Math.sin(time / 200) * 2 + scale;
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.arc(food.x + scale / 2, food.y + scale / 2, pulse / 2, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    function drawSnake() {
+      snake.forEach((s, i) => {
+        ctx.fillStyle = (i === animatingSegmentIndex)
+          ? `rgba(0, 255, 0, ${newSegmentAlpha.toFixed(2)})`
+          : "lime";
+        ctx.fillRect(s.x, s.y, scale, scale);
+      });
+    }
+
+    function update() {
+      let head = { ...snake[0] };
+      if (direction === "LEFT") head.x -= scale;
+      if (direction === "UP") head.y -= scale;
+      if (direction === "RIGHT") head.x += scale;
+      if (direction === "DOWN") head.y += scale;
+
+      if (head.x < 0) head.x = canvas.width - scale;
+      if (head.x >= canvas.width) head.x = 0;
+      if (head.y < 0) head.y = canvas.height - scale;
+      if (head.y >= canvas.height) head.y = 0;
+
+      if (head.x === food.x && head.y === food.y) {
+        food = randomFoodPosition();
+        animatingSegmentIndex = snake.length;
+        newSegmentAlpha = 0;
+      } else {
+        snake.pop();
+      }
+
+      if (snake.slice(0, -1).some(s => s.x === head.x && s.y === head.y)) {
+        gameOver = true;
+        running = false;
+        pauseBtn.disabled = true;
+        restartBtn.disabled = false;
+        startBtn.disabled = true;
+
+        // Submit score with player name
+        const playerName = playerNameInput.value.trim() || "Unknown";
+        fetch('Score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'playerName=' + encodeURIComponent(playerName) + '&score=' + snake.length
+        })
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to save score");
+          return response.text();
+        })
+        .then(msg => {
+          console.log("Server:", msg);
+          loadLeaderboard(); // Refresh leaderboard after save
+        })
+        .catch(err => console.error("Error:", err.message));
+
+        gameOverText.textContent = `Game Over! Your score: ${snake.length}`;
+        gameOverOverlay.style.display = "flex";
+        return;
+      }
+
+      snake.unshift(head);
+    }
+
+    function draw(time) {
+      if (!running && !gameOver) {
+        requestAnimationFrame(draw);
+        return;
+      }
+
+      const delta = time - lastTime;
+      lastTime = time;
+      accumulator += delta;
+
+      if (!gameOver && accumulator > getSpeed()) {
+        update();
+        accumulator = 0;
+      }
+
+      clearCanvas();
+      drawFood(time);
+
+      if (animatingSegmentIndex >= 0 && newSegmentAlpha < 1) {
+        newSegmentAlpha += 0.05;
+        if (newSegmentAlpha > 1) newSegmentAlpha = 1;
+      }
+
+      drawSnake();
+      requestAnimationFrame(draw);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (!running) return;
+      const key = e.key.toLowerCase();
+      if ((key === "a" || key === "arrowleft") && direction !== "RIGHT") direction = "LEFT";
+      if ((key === "w" || key === "arrowup") && direction !== "DOWN") direction = "UP";
+      if ((key === "d" || key === "arrowright") && direction !== "LEFT") direction = "RIGHT";
+      if ((key === "s" || key === "arrowdown") && direction !== "UP") direction = "DOWN";
+    });
+
+    startBtn.addEventListener("click", () => {
+      if (!running && !gameOver) {
+        running = true;
+        pauseBtn.disabled = false;
+        restartBtn.disabled = false;
+        startBtn.disabled = true;
+        requestAnimationFrame(draw);
+      }
+    });
+
+    pauseBtn.addEventListener("click", () => {
+      running = !running;
+      pauseBtn.textContent = running ? "Pause" : "Resume";
+      if (running) requestAnimationFrame(draw);
+    });
+
+    restartBtn.addEventListener("click", initGame);
+    overlayRestartBtn.addEventListener("click", initGame);
+
+    playerNameInput.addEventListener("input", () => {
+      startBtn.disabled = playerNameInput.value.trim() === "";
+    });
+
+    // Leaderboard loading
+    function loadLeaderboard() {
+      fetch('Score')
+        .then(res => res.json())
+        .then(data => {
+          leaderboardBody.innerHTML = "";
+          if (data.length === 0) {
+            leaderboardBody.innerHTML = '<tr><td colspan="2">No scores yet.</td></tr>';
+            return;
+          }
+          data.forEach(entry => {
+            const row = document.createElement("tr");
+            const nameCell = document.createElement("td");
+            nameCell.textContent = entry.name;
+            const scoreCell = document.createElement("td");
+            scoreCell.textContent = entry.score;
+            row.appendChild(nameCell);
+            row.appendChild(scoreCell);
+            leaderboardBody.appendChild(row);
+          });
+        })
+        .catch(() => {
+          leaderboardBody.innerHTML = '<tr><td colspan="2">Failed to load leaderboard.</td></tr>';
+        });
+    }
+
+    // Initialize page
+    initGame();
+    loadLeaderboard();
+  </script>
+
+</body>
+</html>
