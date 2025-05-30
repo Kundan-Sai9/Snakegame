@@ -10,9 +10,9 @@ import javax.servlet.http.*;
 public class Score extends HttpServlet {
 
     // PostgreSQL connection details (Render)
-    private static final String JDBC_URL = "jdbc:postgresql://dpg-d0pnqb3e5dus73e1j4g0-a.oregon-postgres.render.com:5432/snake_uvtx";
-    private static final String JDBC_USER = "snake_uvtx_user";
-    private static final String JDBC_PASS = "7hOpA7eoytpjHqmVHnTrZzqesevoSGQw";
+    private static final String JDBC_URL = "jdbc:postgresql://localhost:5432/postgres";
+    private static final String JDBC_USER = "postgres";
+    private static final String JDBC_PASS = "2005";
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
