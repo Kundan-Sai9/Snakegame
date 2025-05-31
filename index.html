@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Snake Game with Leaderboard</title>
+  <title>Snake Game</title>
   <style>
     body {
       background: #000;
@@ -85,7 +85,8 @@
 
   <h1>Snake Game</h1>
 
-  <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="15" />
+  <!-- Added player name input -->
+  <input type="text" id="playerNameInput" placeholder="Enter your name" />
 
   <div>
     <button id="startBtn" disabled>Start</button>
@@ -128,7 +129,6 @@
     const gameOverText = document.getElementById("gameOverText");
     const overlayRestartBtn = document.getElementById("overlayRestartBtn");
     const playerNameInput = document.getElementById("playerNameInput");
-    const leaderboardBody = document.getElementById("leaderboardBody");
 
     function initGame() {
       snake = [{ x: 160, y: 160 }];
@@ -233,7 +233,7 @@
         })
         .then(msg => {
           console.log("Server:", msg);
-          loadLeaderboard(); // Refresh leaderboard after save
+          // Leaderboard removed, so no refresh here
         })
         .catch(err => console.error("Error:", err.message));
 
@@ -304,10 +304,6 @@
       startBtn.disabled = playerNameInput.value.trim() === "";
     });
 
-    // Leaderboard loading
-   
-
-    // Initialize page
     initGame();
   </script>
 
