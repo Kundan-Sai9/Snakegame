@@ -10,9 +10,10 @@ import javax.servlet.http.*;
 public class Score extends HttpServlet {
 
     // PostgreSQL connection details (Render)
-    private static final String JDBC_URL = "jdbc:postgresql://localhost:5432/postgres";
-    private static final String JDBC_USER = "postgres";
-    private static final String JDBC_PASS = "2005";
+	String url = "jdbc:postgresql://" + System.getenv("postgres.railway.internal") + ":" + System.getenv("5432") + "/" + System.getenv("railway");
+	String user = System.getenv("postgres");
+	String pass = System.getenv("ImiTDiTpSPTRFUPbRuZfjsykmxLFLEJg");
+
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -32,7 +33,7 @@ public class Score extends HttpServlet {
             int score = Integer.parseInt(scoreStr);
 
             Class.forName("org.postgresql.Driver");
-            Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASS);
+            Connection conn = DriverManager.getConnection(url, user, pass);
 
             String sql = "INSERT INTO scores (player, score) VALUES (?, ?)";
             PreparedStatement stmt = conn.prepareStatement(sql);
@@ -64,7 +65,7 @@ public class Score extends HttpServlet {
 
         try {
             Class.forName("org.postgresql.Driver");
-            Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASS);
+            Connection conn = DriverManager.getConnection(url, user, pass);
 
             String sql = "SELECT player, score FROM scores ORDER BY score DESC LIMIT 10";
             PreparedStatement stmt = conn.prepareStatement(sql);
