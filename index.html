@@ -68,30 +68,6 @@
       background-color: #0f0;
       color: #000;
     }
-    #leaderboard {
-      margin-top: 40px;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
-      text-align: left;
-    }
-    #leaderboard h2 {
-      color: #0f0;
-      margin-bottom: 10px;
-    }
-    #leaderboard table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    #leaderboard th, #leaderboard td {
-      border: 1px solid #0f0;
-      padding: 8px;
-      font-size: 16px;
-    }
-    #leaderboard th {
-      background-color: #0f0;
-      color: #000;
-    }
     #playerNameInput {
       margin-bottom: 15px;
       font-size: 18px;
@@ -122,18 +98,6 @@
   <div id="gameOverOverlay">
     <div id="gameOverText"></div>
     <button id="overlayRestartBtn">Restart</button>
-  </div>
-
-  <div id="leaderboard">
-    <h2>Leaderboard - Top 10 Scores</h2>
-    <table>
-      <thead>
-        <tr><th>Player</th><th>Score</th></tr>
-      </thead>
-      <tbody id="leaderboardBody">
-        <!-- Filled dynamically -->
-      </tbody>
-    </table>
   </div>
 
   <script>
@@ -341,34 +305,10 @@
     });
 
     // Leaderboard loading
-    function loadLeaderboard() {
-      fetch('Score')
-        .then(res => res.json())
-        .then(data => {
-          leaderboardBody.innerHTML = "";
-          if (data.length === 0) {
-            leaderboardBody.innerHTML = '<tr><td colspan="2">No scores yet.</td></tr>';
-            return;
-          }
-          data.forEach(entry => {
-            const row = document.createElement("tr");
-            const nameCell = document.createElement("td");
-            nameCell.textContent = entry.name;
-            const scoreCell = document.createElement("td");
-            scoreCell.textContent = entry.score;
-            row.appendChild(nameCell);
-            row.appendChild(scoreCell);
-            leaderboardBody.appendChild(row);
-          });
-        })
-        .catch(() => {
-          leaderboardBody.innerHTML = '<tr><td colspan="2">Failed to load leaderboard.</td></tr>';
-        });
-    }
+   
 
     // Initialize page
     initGame();
-    loadLeaderboard();
   </script>
 
 </body>
