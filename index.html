@@ -68,28 +68,15 @@
       background-color: #0f0;
       color: #000;
     }
-    #playerNameInput {
-      margin-bottom: 15px;
-      font-size: 18px;
-      padding: 6px 8px;
-      width: 200px;
-      border-radius: 4px;
-      border: 2px solid #0f0;
-      background: #111;
-      color: #0f0;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
 
   <h1>Snake Game</h1>
-
-  <!-- Added player name input -->
-  <input type="text" id="playerNameInput" placeholder="Enter your name" />
+  <h2 id="scoreDisplay">Score: 1</h2>
 
   <div>
-    <button id="startBtn" disabled>Start</button>
+    <button id="startBtn">Start</button>
     <button id="pauseBtn" disabled>Pause</button>
     <button id="restartBtn" disabled>Restart</button>
   </div>
@@ -128,7 +115,7 @@
     const gameOverOverlay = document.getElementById("gameOverOverlay");
     const gameOverText = document.getElementById("gameOverText");
     const overlayRestartBtn = document.getElementById("overlayRestartBtn");
-    const playerNameInput = document.getElementById("playerNameInput");
+    const scoreDisplay = document.getElementById("scoreDisplay");
 
     function initGame() {
       snake = [{ x: 160, y: 160 }];
@@ -144,12 +131,13 @@
       pauseBtn.textContent = "Pause";
       pauseBtn.disabled = true;
       restartBtn.disabled = true;
-      startBtn.disabled = playerNameInput.value.trim() === "";
+      startBtn.disabled = false;
 
       clearCanvas();
       drawInitial();
 
       gameOverOverlay.style.display = "none";
+      scoreDisplay.textContent = "Score: 1";
     }
 
     function randomFoodPosition() {
@@ -209,6 +197,7 @@
         food = randomFoodPosition();
         animatingSegmentIndex = snake.length;
         newSegmentAlpha = 0;
+        scoreDisplay.textContent = "Score: " + (snake.length + 1);
       } else {
         snake.pop();
       }
@@ -219,23 +208,6 @@
         pauseBtn.disabled = true;
         restartBtn.disabled = false;
         startBtn.disabled = true;
-
-        // Submit score with player name
-        const playerName = playerNameInput.value.trim() || "Unknown";
-        fetch('Score', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: 'playerName=' + encodeURIComponent(playerName) + '&score=' + snake.length
-        })
-        .then(response => {
-          if (!response.ok) throw new Error("Failed to save score");
-          return response.text();
-        })
-        .then(msg => {
-          console.log("Server:", msg);
-          // Leaderboard removed, so no refresh here
-        })
-        .catch(err => console.error("Error:", err.message));
 
         gameOverText.textContent = `Game Over! Your score: ${snake.length}`;
         gameOverOverlay.style.display = "flex";
@@ -299,10 +271,6 @@
 
     restartBtn.addEventListener("click", initGame);
     overlayRestartBtn.addEventListener("click", initGame);
-
-    playerNameInput.addEventListener("input", () => {
-      startBtn.disabled = playerNameInput.value.trim() === "";
-    });
 
     initGame();
   </script>
